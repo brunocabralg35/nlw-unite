@@ -11,8 +11,21 @@ import { Table } from "./table/table";
 import { TableHeader } from "./table/table-header";
 import { TableCell } from "./table/table-cell";
 import TableRow from "./table/table-row";
+import { useState } from "react";
+import { attendees } from "../data/attendees";
+import dayjs from "dayjs";
+import "dayjs/locale/pt-br";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
+dayjs.locale("pt-br");
 
 export default function AttendeeList() {
+  const [search, setSearch] = useState<string>();
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.ceil(attendees.length / 10)
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-3 items-center">
@@ -20,6 +33,8 @@ export default function AttendeeList() {
         <div className="px-3 py-1.5 border w-72 border-white/10 rounded-lg text-sm flex items-center gap-3">
           <IoSearch className="size-4 text-emerald-300" />
           <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             type="text"
             placeholder="Buscar participantes"
             className="bg-transparent flex-1 outline-none p-0 border-0 ring-0 text-small"
@@ -46,9 +61,9 @@ export default function AttendeeList() {
           </tr>
         </thead>
         <tbody>
-          {Array.from({ length: 6 }).map((_, i) => {
+          {attendees.slice((page - 1) * 10, page * 10).map((attendee) => {
             return (
-              <TableRow key={i}>
+              <TableRow key={attendee.id}>
                 <TableCell>
                   <input
                     className="size-4 bg-black/20 rounded border border-white/10"
@@ -58,21 +73,21 @@ export default function AttendeeList() {
                   />
                 </TableCell>
                 <TableCell className="py-3 px-4 text-sm text-zinc-300">
-                  12383
+                  {attendee.id}
                 </TableCell>
                 <TableCell className="py-3 px-4 text-sm text-zinc-300">
                   <div className="flex flex-col gap-1">
                     <span className="font-semibold text-white">
-                      Bruno Cabral
+                      {attendee.name}
                     </span>
-                    <span>brunocabral035@gmail.com</span>
+                    <span>{attendee.email}</span>
                   </div>
                 </TableCell>
                 <TableCell className="py-3 px-4 text-sm text-zinc-300">
-                  7 dias atrás
+                  {dayjs().to(attendee.createdAt)}
                 </TableCell>
                 <TableCell className="py-3 px-4 text-sm text-zinc-300">
-                  3 dias atrás
+                  {dayjs().to(attendee.checkedInAt)}
                 </TableCell>
                 <TableCell className="py-3 px-4 text-sm text-zinc-300">
                   <IconButton transparent>
@@ -86,25 +101,30 @@ export default function AttendeeList() {
         <tfoot>
           <tr>
             <TableCell className="py-3 px-4 text-sm text-zinc-300" colSpan={3}>
-              Mostrando 10 de 228 itens
+              Mostrando 10 de {attendees.length} itens
             </TableCell>
             <TableCell
               className="py-3 px-4 text-sm text-zinc-300 text-right"
               colSpan={3}
             >
               <div className="inline-flex items-center gap-8">
-                <span> Página 1 de 23</span>
+                <span>
+                  {" "}
+                  Página {page} de {totalPages}
+                </span>
                 <div className="flex gap-1.5">
-                  <IconButton>
+                  <IconButton onClick={() => setPage(1)} disabled={page === 1}>
                     <MdKeyboardDoubleArrowLeft className="size-4" />
                   </IconButton>
-                  <IconButton>
+                  <IconButton onClick={() => setPage(page - 1)} disabled={page === 1}>
                     <MdKeyboardArrowLeft className="size-4" />
                   </IconButton>
-                  <IconButton>
+                  <IconButton onClick={() => setPage(page + 1)} disabled={page === totalPages}>
                     <MdKeyboardArrowRight className="size-4" />
                   </IconButton>
-                  <IconButton>
+                  <IconButton
+                    onClick={() => setPage(totalPages)} disabled={page === totalPages}
+                  >
                     <MdKeyboardDoubleArrowRight className="size-4" />
                   </IconButton>
                 </div>
