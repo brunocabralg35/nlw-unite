@@ -6,13 +6,15 @@ import {
   MdKeyboardDoubleArrowLeft,
   MdKeyboardDoubleArrowRight,
 } from "react-icons/md";
+
 import { IconButton } from "./icon-button";
 import { Table } from "./table/table";
 import { TableHeader } from "./table/table-header";
 import { TableCell } from "./table/table-cell";
 import TableRow from "./table/table-row";
-import { useState } from "react";
-import { attendees } from "../data/attendees";
+
+import { useEffect, useState } from "react";
+
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -20,11 +22,42 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 dayjs.locale("pt-br");
 
+interface Attendee {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  checkedInAt: string | null;
+}
+
 export default function AttendeeList() {
-  const [search, setSearch] = useState<string>();
+  const [search, setSearch] = useState<string>("");
   const [page, setPage] = useState(1);
 
-  const totalPages = Math.ceil(attendees.length / 10)
+  const [attendees, setAttendees] = useState<Attendee[]>([]);
+  const [total, setTotal] = useState(0);
+
+  const totalPages = Math.ceil(total / 10);
+
+  useEffect(() => {
+    const url = new URL(
+      "http://localhost:3333/events/22ef5b56-0ee0-4729-aeab-e906c3dcceb5/attendees"
+    );
+   
+    url.searchParams.set("pageIndex", String(page - 1));
+
+    if(search.length > 0) {
+      url.searchParams.set("query", search);
+    }
+
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        setAttendees(data.attendees);
+        setTotal(data.total);
+      });
+  }, [page, search]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -34,7 +67,10 @@ export default function AttendeeList() {
           <IoSearch className="size-4 text-emerald-300" />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             type="text"
             placeholder="Buscar participantes"
             className="bg-transparent flex-1 outline-none p-0 border-0 ring-0 text-small"
@@ -61,7 +97,7 @@ export default function AttendeeList() {
           </tr>
         </thead>
         <tbody>
-          {attendees.slice((page - 1) * 10, page * 10).map((attendee) => {
+          {attendees.map((attendee) => {
             return (
               <TableRow key={attendee.id}>
                 <TableCell>
@@ -87,7 +123,11 @@ export default function AttendeeList() {
                   {dayjs().to(attendee.createdAt)}
                 </TableCell>
                 <TableCell className="py-3 px-4 text-sm text-zinc-300">
-                  {dayjs().to(attendee.checkedInAt)}
+                  {!attendee.checkedInAt ? (
+                    <span className="text-zinc-400">Não fez check-in</span>
+                  ) : (
+                    dayjs().to(attendee.checkedInAt)
+                  )}
                 </TableCell>
                 <TableCell className="py-3 px-4 text-sm text-zinc-300">
                   <IconButton transparent>
@@ -101,7 +141,7 @@ export default function AttendeeList() {
         <tfoot>
           <tr>
             <TableCell className="py-3 px-4 text-sm text-zinc-300" colSpan={3}>
-              Mostrando 10 de {attendees.length} itens
+              Mostrando {attendees.length} de {total} itens
             </TableCell>
             <TableCell
               className="py-3 px-4 text-sm text-zinc-300 text-right"
@@ -116,14 +156,21 @@ export default function AttendeeList() {
                   <IconButton onClick={() => setPage(1)} disabled={page === 1}>
                     <MdKeyboardDoubleArrowLeft className="size-4" />
                   </IconButton>
-                  <IconButton onClick={() => setPage(page - 1)} disabled={page === 1}>
+                  <IconButton
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 1}
+                  >
                     <MdKeyboardArrowLeft className="size-4" />
                   </IconButton>
-                  <IconButton onClick={() => setPage(page + 1)} disabled={page === totalPages}>
+                  <IconButton
+                    onClick={() => setPage(page + 1)}
+                    disabled={page === totalPages}
+                  >
                     <MdKeyboardArrowRight className="size-4" />
                   </IconButton>
                   <IconButton
-                    onClick={() => setPage(totalPages)} disabled={page === totalPages}
+                    onClick={() => setPage(totalPages)}
+                    disabled={page === totalPages}
                   >
                     <MdKeyboardDoubleArrowRight className="size-4" />
                   </IconButton>

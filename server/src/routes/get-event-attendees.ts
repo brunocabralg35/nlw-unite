@@ -28,6 +28,7 @@ export async function getEventAttendees(app: FastifyInstance) {
                 checkedInAt: z.date().nullish(),
               })
             ),
+            total: z.number(),
           }),
         },
       },
@@ -75,6 +76,7 @@ export async function getEventAttendees(app: FastifyInstance) {
             checkedIn: attendee.checkIn?.createdAt ?? null,
           };
         }),
+        total: attendees.length,
       });
     }
   );
