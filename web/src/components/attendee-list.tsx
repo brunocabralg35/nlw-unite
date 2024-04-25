@@ -31,22 +31,58 @@ interface Attendee {
 }
 
 export default function AttendeeList() {
-  const [search, setSearch] = useState<string>("");
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState<string>(() => {
+    const url = new URL(window.location.toString());
+
+    if (url.searchParams.has("search")) {
+      return url.searchParams.get("search") ?? "";
+    }
+
+    return "";
+  });
+  const [page, setPage] = useState(() => {
+    const url = new URL(window.location.toString());
+
+    if (url.searchParams.has("page")) {
+      return Number(url.searchParams.get("page"));
+    }
+
+    return 1;
+  });
 
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [total, setTotal] = useState(0);
 
   const totalPages = Math.ceil(total / 10);
 
+  const setCurrentPage = (page: number) => {
+    const url = new URL(window.location.toString());
+
+    url.searchParams.set("page", String(page));
+
+    window.history.pushState({}, "", url);
+
+    setPage(page);
+  };
+
+  const setCurrentSearch = (search: string) => {
+    const url = new URL(window.location.toString());
+
+    url.searchParams.set("search", search);
+
+    window.history.pushState({}, "", url);
+
+    setSearch(search);
+  };
+
   useEffect(() => {
     const url = new URL(
       "http://localhost:3333/events/22ef5b56-0ee0-4729-aeab-e906c3dcceb5/attendees"
     );
-   
+
     url.searchParams.set("pageIndex", String(page - 1));
 
-    if(search.length > 0) {
+    if (search.length > 0) {
       url.searchParams.set("query", search);
     }
 
@@ -68,7 +104,7 @@ export default function AttendeeList() {
           <input
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
+              setCurrentSearch(e.target.value);
               setPage(1);
             }}
             type="text"
@@ -153,23 +189,26 @@ export default function AttendeeList() {
                   Página {page} de {totalPages}
                 </span>
                 <div className="flex gap-1.5">
-                  <IconButton onClick={() => setPage(1)} disabled={page === 1}>
+                  <IconButton
+                    onClick={() => setCurrentPage(1)}
+                    disabled={page === 1}
+                  >
                     <MdKeyboardDoubleArrowLeft className="size-4" />
                   </IconButton>
                   <IconButton
-                    onClick={() => setPage(page - 1)}
+                    onClick={() => setCurrentPage(page - 1)}
                     disabled={page === 1}
                   >
                     <MdKeyboardArrowLeft className="size-4" />
                   </IconButton>
                   <IconButton
-                    onClick={() => setPage(page + 1)}
+                    onClick={() => setCurrentPage(page + 1)}
                     disabled={page === totalPages}
                   >
                     <MdKeyboardArrowRight className="size-4" />
                   </IconButton>
                   <IconButton
-                    onClick={() => setPage(totalPages)}
+                    onClick={() => setCurrentPage(totalPages)}
                     disabled={page === totalPages}
                   >
                     <MdKeyboardDoubleArrowRight className="size-4" />
